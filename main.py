@@ -46,12 +46,12 @@ def show_table(vacancy_dictionary, table_title):
 def predict_salary(salary_from, salary_to):
     expected_salary = 0
     salary_from = salary_from or 0
-    salary_to = salary_to or 0 
+    salary_to = salary_to or 0
     if salary_from*salary_to > 0:
         expected_salary = (salary_from + salary_to) / 2
-    elif salary_from>0 and salary_to == 0:
+    elif salary_from > 0 and salary_to == 0:
         expected_salary = 1.2 * salary_from
-    elif salary_to>0 and salary_from == 0:
+    elif salary_to > 0 and salary_from == 0:
         expected_salary = 0.8 * salary_to
     else:
         expected_salary = None
@@ -105,7 +105,6 @@ def create_vacancy_dict(
         vacancy_cnt = 0
         vacancy_total = 0
         avg_salary = 0
-        found = 0
         page = 0
         pages_number = 1
         parameters = create_response_param(
@@ -120,7 +119,7 @@ def create_vacancy_dict(
 
         for json in response_json:
             for item in json[responce_items_alias]:
-                vacancy_total+=1
+                vacancy_total += 1
                 if salary_count_function(item):
                     vacancy_cnt += 1
                     avg_salary += salary_count_function(item)
@@ -135,7 +134,7 @@ def create_vacancy_dict(
 if __name__ == "__main__":
 
     load_dotenv()
-    
+
     headers = {"X-Api-App-Id": os.environ["X-Api-App-Id"]}
 
     vacancies_dict_hh = create_vacancy_dict(
@@ -143,10 +142,10 @@ if __name__ == "__main__":
                         'pages',
                         1,
                         'items',
-                        ('text','area','page'),
+                        ('text', 'area', 'page'),
                         predict_salary_hh
                        )
-    
+
     vacancies_dict_sj = create_vacancy_dict(
                         url_sj,
                         'total',
