@@ -34,7 +34,7 @@ python main.py
 
 Результат:
 
-
+![](https://github.com/atskayasatana/Images/blob/cab8f567e77b2cd10ec4035ddcdbaf62c44dfae6/hh_api_res.png)
 
 
 ### Функции
