@@ -45,11 +45,13 @@ def show_table(vacancy_dictionary, table_title):
 
 def predict_salary(salary_from, salary_to):
     expected_salary = 0
-    if salary_from and salary_to:
+    salary_from = salary_from or 0
+    salary_to = salary_to or 0 
+    if salary_from*salary_to > 0:
         expected_salary = (salary_from + salary_to) / 2
-    elif salary_from and not salary_to:
+    elif salary_from>0 and salary_to == 0:
         expected_salary = 1.2 * salary_from
-    elif not salary_to and salary_from:
+    elif salary_to>0 and salary_from == 0:
         expected_salary = 0.8 * salary_to
     else:
         expected_salary = None
@@ -101,12 +103,13 @@ def create_vacancy_dict(
         response_json = []
         vacancy_text = f"Программист {language}"
         vacancy_cnt = 0
+        vacancy_total = 0
         avg_salary = 0
         found = 0
         page = 0
         pages_number = 1
         parameters = create_response_param(
-            parameters_name, (vacancy_text, location, page)
+            parameters_name, [vacancy_text, location, page]
         )
         while page < pages_number:
             page_json = get_response_json(url, parameters, headers)
@@ -117,11 +120,12 @@ def create_vacancy_dict(
 
         for json in response_json:
             for item in json[responce_items_alias]:
+                vacancy_total+=1
                 if salary_count_function(item):
                     vacancy_cnt += 1
                     avg_salary += salary_count_function(item)
 
-        vacancies_dict[language]["vacancies_found"] = pages_number
+        vacancies_dict[language]["vacancies_found"] = vacancy_total
         vacancies_dict[language]["vacancies_processed"] = vacancy_cnt
         vacancies_dict[language]["average_salary"] = int(avg_salary / vacancy_cnt)
 
