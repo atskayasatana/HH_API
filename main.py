@@ -67,7 +67,7 @@ def predict_salary_hh(vacancy):
     exp_salary = None
     salary = vacancy["salary"]
     if not salary or salary["currency"] != "RUR" : return None
-    exp_salary = (predict_salary(salary["from"], salary["to"])
+    exp_salary = predict_salary(salary["from"], salary["to"])
     return exp_salary
 
 
@@ -100,10 +100,10 @@ def get_vacancies(
                      )
                 vacancy_page = page_response.json()
                 pages_number = vacancy_page[pages_alias]
-                vacancy_pages.append(vacancy_page)
             except HTTPError:
                 vacancy_page=[]
                 
+            vacancy_pages.append(vacancy_page)   
             page += 1
             parameters["page"] = page
 
