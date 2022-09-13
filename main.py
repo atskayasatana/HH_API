@@ -98,11 +98,11 @@ def get_vacancies(
                 page_response = requests.get(
                     url, params=parameters, headers=headers
                      )
-                page_json = page_response.json()
-                pages_number = page_json[pages_alias]
-                vacancy_pages.append(page_json)
+                vacancy_page = page_response.json()
+                pages_number = vacancy_page[pages_alias]
+                vacancy_pages.append(vacancy_page)
             except HTTPError:
-                page_json=[]
+                vacancy_page=[]
                 
             page += 1
             parameters["page"] = page
