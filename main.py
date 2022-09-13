@@ -110,9 +110,10 @@ def get_vacancies(
         for page in vacancy_pages:
             for vacancy in page[responce_items_alias]:
                 vacancy_total += 1
-                if salary_count_function(vacancy):
-                    vacancy_cnt += 1
-                    avg_salary += salary_count_function(vacancy)
+                expected_salary = salary_count_function(vacancy)
+                if not expected_salary: continue
+                vacancy_cnt += 1
+                avg_salary += expected_salary
 
         vacancies[language]["vacancies_found"] = vacancy_total
         vacancies[language]["vacancies_processed"] = vacancy_cnt
