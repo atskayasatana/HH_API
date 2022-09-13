@@ -66,16 +66,12 @@ def predict_salary_sj(vacancy):
 def predict_salary_hh(vacancy):
     exp_salary = None
     salary = vacancy["salary"]
-    if salary:
-        exp_salary = (
-            predict_salary(salary["from"], salary["to"])
-            if salary["currency"] == "RUR"
-            else None
-            )
+    if not salary or salary["currency"] != "RUR" : return None
+    exp_salary = (predict_salary(salary["from"], salary["to"])
     return exp_salary
 
 
-def create_vacancy_dict(
+def get_vacancies(
     url,
     pages_alias,
     location,
@@ -132,7 +128,7 @@ if __name__ == "__main__":
 
     headers = {"X-Api-App-Id": os.environ["X-API-APP-ID"]}
 
-    vacancies_hh = create_vacancy_dict(
+    vacancies_hh = get_vacancies(
         URL_HH,
         "pages",
         MOSCOW_ID_HH,
@@ -141,7 +137,7 @@ if __name__ == "__main__":
         predict_salary_hh,
     )
 
-    vacancies_sj = create_vacancy_dict(
+    vacancies_sj = get_vacancies(
         URL_SJ,
         "total",
         MOSCOW_ID_SJ,
