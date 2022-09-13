@@ -94,12 +94,16 @@ def get_vacancies(
         pages_number = 1
         parameters = dict(zip(parameters_name, [vacancy_text, location, page]))
         while page < pages_number:
-            page_response = requests.get(
-                url, params=parameters, headers=headers
-            )
-            page_json = page_response.json()
-            pages_number = page_json[pages_alias]
-            vacancy_pages.append(page_json)
+            try:
+                page_response = requests.get(
+                    url, params=parameters, headers=headers
+                     )
+                page_json = page_response.json()
+                pages_number = page_json[pages_alias]
+                vacancy_pages.append(page_json)
+            except HTTPError:
+                page_json=[]
+                
             page += 1
             parameters["page"] = page
 
