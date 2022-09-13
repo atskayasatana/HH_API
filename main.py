@@ -4,7 +4,7 @@ import requests
 from dotenv import load_dotenv
 from terminaltables import AsciiTable
 
-most_popular_languages = (
+MOST_POPULAR_LANGUAGES = (
     "Javascript",
     "Java",
     "Python",
@@ -17,8 +17,11 @@ most_popular_languages = (
     "Scala",
 )
 
-url_hh = "https://api.hh.ru/vacancies"
-url_sj = "https://api.superjob.ru/2.0/vacancies/"
+URL_HH = "https://api.hh.ru/vacancies"
+URL_SJ = "https://api.superjob.ru/2.0/vacancies/"
+
+MOSCOW_ID_SJ = 4
+MOSCOW_ID_HH = 1
 
 
 def show_table(vacancy_dictionary, table_title):
@@ -44,17 +47,13 @@ def show_table(vacancy_dictionary, table_title):
 
 
 def predict_salary(salary_from, salary_to):
-    expected_salary = 0
-    salary_from = salary_from or 0
-    salary_to = salary_to or 0
-    if salary_from*salary_to > 0:
+    expected_salary = None
+    if salary_from and salary_to:
         expected_salary = (salary_from + salary_to) / 2
-    elif salary_from > 0 and salary_to == 0:
+    elif salary_from and not salary_to:
         expected_salary = 1.2 * salary_from
-    elif salary_to > 0 and salary_from == 0:
-        expected_salary = 0.8 * salary_to
     else:
-        expected_salary = None
+        expected_salary = 0.8 * salary_to
     return expected_salary
 
 
@@ -65,25 +64,15 @@ def predict_salary_sj(vacancy):
 
 
 def predict_salary_hh(vacancy):
+    exp_salary = None
     salary = vacancy["salary"]
-    exp_salary = 0
-    if salary and salary["currency"] == "RUR":
-        salary_from = salary["from"]
-        salary_to = salary["to"]
-        exp_salary = predict_salary(salary_from, salary_to)
-    else:
-        exp_salary = None
+    if salary:
+        exp_salary = (
+            predict_salary(salary["from"], salary["to"])
+            if salary["currency"] == "RUR"
+            else None
+            )
     return exp_salary
-
-
-def get_response_json(url, params, headers=None):
-    page_response = requests.get(url, params=params, headers=headers)
-    page_json = page_response.json()
-    return page_json
-
-
-def create_response_param(parameter_name, parameter_value):
-    return dict(zip(parameter_name, parameter_value))
 
 
 def create_vacancy_dict(
@@ -96,65 +85,71 @@ def create_vacancy_dict(
     headers=None,
 ):
 
-    empty_dicts = [{} for _ in range(len(most_popular_languages))]
-    vacancies_dict = dict(zip(most_popular_languages, empty_dicts))
+    vacancy_description = [{} for _ in range(len(MOST_POPULAR_LANGUAGES))]
+    vacancies = dict(zip(MOST_POPULAR_LANGUAGES, vacancy_description))
 
-    for language in most_popular_languages:
-        response_json = []
+    for language in MOST_POPULAR_LANGUAGES:
+        vacancy_pages = []
         vacancy_text = f"Программист {language}"
         vacancy_cnt = 0
         vacancy_total = 0
         avg_salary = 0
         page = 0
         pages_number = 1
-        parameters = create_response_param(
-            parameters_name, [vacancy_text, location, page]
-        )
+        parameters = dict(zip(parameters_name, [vacancy_text, location, page]))
         while page < pages_number:
-            page_json = get_response_json(url, parameters, headers)
+            page_response = requests.get(
+                url, params=parameters, headers=headers
+            )
+            page_json = page_response.json()
             pages_number = page_json[pages_alias]
-            response_json.append(page_json)
+            vacancy_pages.append(page_json)
             page += 1
             parameters["page"] = page
 
-        for json in response_json:
-            for item in json[responce_items_alias]:
+        for page in vacancy_pages:
+            for vacancy in page[responce_items_alias]:
                 vacancy_total += 1
-                if salary_count_function(item):
+                if salary_count_function(vacancy):
                     vacancy_cnt += 1
-                    avg_salary += salary_count_function(item)
+                    avg_salary += salary_count_function(vacancy)
 
-        vacancies_dict[language]["vacancies_found"] = vacancy_total
-        vacancies_dict[language]["vacancies_processed"] = vacancy_cnt
-        vacancies_dict[language]["average_salary"] = int(avg_salary / vacancy_cnt)
+        vacancies[language]["vacancies_found"] = vacancy_total
+        vacancies[language]["vacancies_processed"] = vacancy_cnt
+        try:
+            vacancies[language]["average_salary"] = int(
+                avg_salary / vacancy_cnt
+            )
+        except ZeroDivisionError:
+            vacancies[language]["average_salary"] = 0
 
-    return vacancies_dict
+    return vacancies
 
 
 if __name__ == "__main__":
 
     load_dotenv()
 
-    headers = {"X-Api-App-Id": os.environ["X-Api-App-Id"]}
+    headers = {"X-Api-App-Id": os.environ["X-API-APP-ID"]}
 
-    vacancies_dict_hh = create_vacancy_dict(
-                        url_hh,
-                        'pages',
-                        1,
-                        'items',
-                        ('text', 'area', 'page'),
-                        predict_salary_hh
-                       )
+    vacancies_hh = create_vacancy_dict(
+        URL_HH,
+        "pages",
+        MOSCOW_ID_HH,
+        "items",
+        ("text", "area", "page"),
+        predict_salary_hh,
+    )
 
-    vacancies_dict_sj = create_vacancy_dict(
-                        url_sj,
-                        'total',
-                        4,
-                        'objects',
-                        ('keyword', 'town', 'page'),
-                        predict_salary_sj,
-                        headers
-                      )
+    vacancies_sj = create_vacancy_dict(
+        URL_SJ,
+        "total",
+        MOSCOW_ID_SJ,
+        "objects",
+        ("keyword", "town", "page"),
+        predict_salary_sj,
+        headers,
+    )
 
-    show_table(vacancies_dict_hh, 'HeadHunter')
-    show_table(vacancies_dict_sj, 'SuperJob')
+    show_table(vacancies_hh, "HeadHunter")
+    show_table(vacancies_sj, "SuperJob")
