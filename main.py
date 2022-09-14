@@ -66,7 +66,8 @@ def predict_salary_sj(vacancy):
 def predict_salary_hh(vacancy):
     exp_salary = None
     salary = vacancy["salary"]
-    if not salary or salary["currency"] != "RUR" : return None
+    if not salary or salary["currency"] != "RUR":
+        return None
     exp_salary = predict_salary(salary["from"], salary["to"])
     return exp_salary
 
@@ -93,25 +94,34 @@ def get_vacancies(
         page = 0
         pages_number = 1
         parameters = dict(zip(parameters_name, [vacancy_text, location, page]))
+
         while page < pages_number:
             try:
                 page_response = requests.get(
                     url, params=parameters, headers=headers
                      )
+                page_response.raise_for_status()
                 vacancy_page = page_response.json()
                 pages_number = vacancy_page[pages_alias]
-            except HTTPError:
-                vacancy_page=[]
-                
-            vacancy_pages.append(vacancy_page)   
+            except requests.exceptions.HTTPError:
+                break
+
+            vacancy_pages.append(vacancy_page)
             page += 1
             parameters["page"] = page
+
+        if not vacancy_pages:
+            vacancies[language]["vacancies_found"] = 0
+            vacancies[language]["vacancies_processed"] = 0
+            vacancies[language]["average_salary"] = 0
+            continue
 
         for page in vacancy_pages:
             for vacancy in page[responce_items_alias]:
                 vacancy_total += 1
                 expected_salary = salary_count_function(vacancy)
-                if not expected_salary: continue
+                if not expected_salary:
+                    continue
                 vacancy_cnt += 1
                 avg_salary += expected_salary
 
